@@ -266,9 +266,25 @@ elif view == "2. Multi-Touch Attribution Engine":
         fallback_csv="markov_channel_attribution.csv",
     )
 
-    combined_attr = pd.concat([attr_long, markov_df], ignore_index=True)
+    # Standardize schema and ensure columns exist for both CSV fallback and SQL
+    if not markov_df.empty:
+        if "attribution_model" not in markov_df.columns:
+            markov_df["attribution_model"] = "markov"
+        if "conversions" not in markov_df.columns:
+            markov_df["conversions"] = markov_df.get("attributed_conversions", 0.0)
 
-    available_models = sorted(combined_attr["attribution_model"].unique().tolist())
+    if not attr_long.empty:
+        conv_col = "credit" if "credit" in attr_long.columns else "conversions"
+        if "attribution_model" in attr_long.columns:
+            attr_long = (
+                attr_long.groupby(["channel", "attribution_model"], as_index=False)
+                .agg({"attributed_revenue": "sum", conv_col: "sum"})
+                .rename(columns={conv_col: "conversions"})
+            )
+
+    combined_attr = pd.concat([attr_long, markov_df], ignore_index=True)
+    combined_attr["attribution_model"] = combined_attr["attribution_model"].astype(str).str.strip()
+    available_models = sorted([m for m in combined_attr["attribution_model"].unique().tolist() if m and m != "nan"])
     selected_model = st.selectbox(
         "Select Attribution Model to Inspect:",
         options=available_models,
@@ -348,7 +364,8 @@ elif view == "3. Paid Channel ROAS & Spend":
     )
 
     if not roas_df.empty:
-        paid_models = sorted(roas_df["attribution_model"].unique().tolist())
+        roas_df["attribution_model"] = roas_df["attribution_model"].astype(str).str.strip()
+        paid_models = sorted([m for m in roas_df["attribution_model"].unique().tolist() if m and m != "nan"])
         sel_paid_model = st.selectbox(
             "Select Attribution Model for Campaign ROAS Audit:",
             options=paid_models,
@@ -500,10 +517,26 @@ elif view == "4. Customer 360 Profile Explorer":
             else:
                 user_paths = journey_df.head(10)
 
-            st.dataframe(
-                user_paths[["order_id", "order_ts", "path_string", "touchpoint_count", "order_net_revenue"]],
-                use_container_width=True,
-            )
+            # Adapt to either SQL mart columns or CSV export columns
+            col_candidates = [
+                ("Order ID", ["order_id", "journey_id"]),
+                ("Timestamp", ["order_ts"]),
+                ("Conversion Path", ["path_string", "path"]),
+                ("Touches", ["touchpoint_count", "path_length"]),
+                ("Net Revenue", ["order_net_revenue", "revenue"]),
+                ("Converted", ["converted"])
+            ]
+            display_dict = {}
+            for col_name, candidates in col_candidates:
+                for cand in candidates:
+                    if cand in user_paths.columns:
+                        display_dict[col_name] = user_paths[cand]
+                        break
+
+            if display_dict:
+                st.dataframe(pd.DataFrame(display_dict), use_container_width=True)
+            else:
+                st.dataframe(user_paths, use_container_width=True)
         else:
             st.info("No conversion journey paths recorded for this specific profile in sample exports.")
 
