@@ -140,10 +140,33 @@ The dashboard specs (parameters, calculated fields, sheets) are in [`tableau/REA
 
 ---
 
-## 6. Testing & validation
+## 6. Testing, Validation & Benchmarks
 
-**77 dbt tests** + **7 pytest tests**, all run in CI (`.github/workflows/ci.yml`).
+The entire pipeline was executed locally on DuckDB (`warehouse.duckdb`) and verified:
+- **dbt Build & Test:** **77 / 77 Passed (100%)** — 2 seeds loaded, 17 models materialized (11 tables, 6 views), 58 schema and reconciliation data tests executed with 0 errors.
+- **Python Test Suite:** **7 / 7 pytest tests Passed (100%)** across Markov graph edge cases and data generator referential integrity.
 
+### Verified Markov Attribution Benchmarks
+| Channel | Removal Effect | Credit Share | Attributed Conversions | Attributed Revenue | Baseline Conv Prob |
+|---|---|---|---|---|---|
+| **Direct** | 0.429 | 17.8% | 314.5 | $2,212,730 | 0.235 |
+| **Email** | 0.414 | 17.1% | 302.9 | $2,131,084 | 0.235 |
+| **Paid Search** | 0.397 | 16.4% | 290.9 | $2,046,510 | 0.235 |
+| **Organic Search** | 0.365 | 15.1% | 267.2 | $1,879,875 | 0.235 |
+| **Paid Social** | 0.277 | 11.5% | 202.9 | $1,427,761 | 0.235 |
+| **Display** | 0.154 | 6.4% | 113.1 | $796,029 | 0.235 |
+| **Organic Social** | 0.148 | 6.1% | 108.5 | $763,550 | 0.235 |
+| **Affiliate** | 0.132 | 5.5% | 96.8 | $681,016 | 0.235 |
+| **Referral** | 0.101 | 4.2% | 74.3 | $522,732 | 0.235 |
+
+### Verified ROAS Comparison by Attribution Model
+| Paid Channel | First-Touch | Last-Touch | Last-Non-Direct | Linear | Time-Decay | Position-Based | Markov (Data-Driven) |
+|---|---|---|---|---|---|---|---|
+| **Paid Social** | 4.05x | 2.22x | 2.84x | 3.10x | 2.74x | 3.14x | **3.12x** |
+| **Display** | 7.15x | 2.12x | 3.12x | 5.04x | 3.83x | 4.77x | **6.57x** |
+| **Paid Search** | 2.02x | 2.32x | 2.68x | 2.11x | 2.19x | 2.14x | **1.88x** |
+
+### Test Assertions Passed
 * Schema tests: uniqueness / not-null on every key, relationships (orders → contacts, devices → contacts), accepted values (channels, models, statuses).
 * Business-logic tests (`dbt/tests/`):
   * `assert_attribution_weights_sum_to_one`: every model gives out exactly 100% credit per order

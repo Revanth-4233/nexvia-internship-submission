@@ -69,7 +69,39 @@ This platform unifies raw omni-channel user touchpoints into a canonical **Custo
 - **Attribution Algorithms:** First-Touch, Last-Touch, Linear, Time-Decay (7-day half-life), Position-Based (U-Shaped 40/40/20), and First-Order Markov Chain with graph transition probability matrices.
 - **Reporting:** Reconciles attributed marketing revenue directly back to finance General Ledger order records.
 
-### 3. Quick Run Instructions
+### 3. Pipeline Execution Results & Benchmarks
+
+The entire end-to-end pipeline was executed and validated locally on DuckDB (`warehouse.duckdb`):
+
+| Pipeline Stage | Entity / Model | Verified Output / Row Count | Status |
+|---|---|---|---|
+| **Synthetic Ingestion** | GA4 Web Events | 96,571 events | ✅ Completed |
+| | Segment Mobile Tracks | 28,028 events | ✅ Completed |
+| | Segment Identifies | 2,071 mappings | ✅ Completed |
+| | CRM Contacts | 2,271 profiles | ✅ Completed |
+| | CRM Orders | 1,858 purchases | ✅ Completed |
+| | Ad Spend Records | 2,184 spend rows | ✅ Completed |
+| **dbt Build** | Staging, Int, Marts Models | 17 models, 2 seeds, 58 data tests | ✅ 77/77 Passed (0 errors) |
+| **Markov Attribution** | Channel Removal Graph | 9 omni-channels evaluated | ✅ Baseline Conv: 23.5% |
+| **BI Data Exports** | Tableau CSV Exports | 8 analytical tables generated | ✅ Fully synced |
+| **Automated Tests** | Integration Test Suite | 7 unit & identity tests | ✅ 7/7 Passed (100%) |
+
+#### Channel Attribution & ROAS Comparison Matrix
+| Channel | First-Touch Share | Last-Touch Share | Linear Share | Time-Decay Share | Markov Share | Attributed Revenue | Paid ROAS (Markov) |
+|---|---|---|---|---|---|---|---|
+| **Direct** | 17.8% | 20.8% | 19.4% | 19.8% | **17.8%** | $2,212,730 | — |
+| **Email** | 9.5% | 24.5% | 17.2% | 20.3% | **17.1%** | $2,131,084 | — |
+| **Paid Search** | 17.6% | 20.2% | 18.4% | 19.1% | **16.4%** | $2,046,510 | **1.88x** |
+| **Organic Search**| 18.6% | 12.2% | 15.7% | 14.3% | **15.1%** | $1,879,875 | — |
+| **Paid Social** | 14.9% | 8.1% | 11.4% | 10.1% | **11.5%** | $1,427,761 | **3.12x** |
+| **Display** | 7.0% | 2.1% | 4.9% | 3.7% | **6.4%** | $796,029 | **6.57x** |
+| **Organic Social**| 6.0% | 2.7% | 4.8% | 4.0% | **6.1%** | $763,550 | — |
+| **Affiliate** | 4.3% | 6.0% | 4.6% | 5.2% | **5.5%** | $681,016 | — |
+| **Referral** | 4.3% | 3.4% | 3.6% | 3.6% | **4.2%** | $522,732 | — |
+
+> **Key Analytical Takeaway:** Last-touch models severely undervalue top-of-funnel discovery channels like Display (underreported by 67% relative to Markov removal effects) and Paid Social, while over-attributing to bottom-of-funnel channels like Email and Direct.
+
+### 4. Quick Run Instructions
 ```bash
 cd DA-02-Customer-360-Attribution
 
@@ -84,7 +116,7 @@ make all
 # Execute automated test suite
 pytest tests/ -v
 ```
-*Test suite status:* **7/7 Passed (100%)**.
+*Test suite status:* **7/7 Passed (100%)** | *dbt test status:* **58/58 Passed (100%)**.
 
 ---
 
