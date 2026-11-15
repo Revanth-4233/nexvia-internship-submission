@@ -213,4 +213,6 @@ tests/test_pipeline.py::TestAirflowDAG::test_dag_file_syntax PASSED             
 - **Repository Visibility:** Public
 - **GitHub Repository URL:** `https://github.com/Revanth-4233/nexvia-internship-submission`
 - **Primary Contacts:** Mukesh Revanth (mukeshrevanth94@gmail.com)
+- **DA-02_ Customer 360 & Attribution live demo : https://nexvia-internship-submission-mukesh-revanth4233.streamlit.app/
+- **DA-03-Retail-Supply Chain Control Tower live demo : https://nexvia-internship-submission-revanth4233.streamlit.app/
 - **Live Local Control Tower:** Runs on `http://localhost:8501` via `streamlit run dashboard_app.py`
