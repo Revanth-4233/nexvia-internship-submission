@@ -1,4 +1,6 @@
 # core (local, zero-cost pipeline)
+streamlit>=1.28.0
+plotly>=5.15.0
 dbt-core>=1.8
 dbt-duckdb>=1.8
 duckdb>=1.0
