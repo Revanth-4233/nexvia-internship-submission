@@ -1,0 +1,18 @@
+version: 2
+sources:
+  - name: raw
+    description: Raw landing zone. Loaded by scripts/load_bigquery.py (prod) or scripts/load_duckdb.py (dev/CI).
+    schema: "{{ var('raw_schema', 'raw') }}"
+    tables:
+      - name: ga4_events
+        description: Website events, flattened GA4 BigQuery export (one row per event).
+      - name: segment_tracks
+        description: Mobile app events from Segment (tracks table).
+      - name: segment_identifies
+        description: Segment identify calls linking an anonymous device id to a known user_id.
+      - name: crm_contacts
+        description: CRM contacts (HubSpot/Salesforce style).
+      - name: crm_orders
+        description: CRM orders = revenue source of truth.
+      - name: ad_spend
+        description: Daily spend, impressions and clicks per campaign from Google Ads and Meta Ads.

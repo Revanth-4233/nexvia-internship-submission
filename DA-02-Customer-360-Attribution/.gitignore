@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml
+dbt/profiles.yml
+*.duckdb
+*.duckdb.wal
+.venv/
+.env
+*.json.key
+service-account*.json
+data/raw/*.csv

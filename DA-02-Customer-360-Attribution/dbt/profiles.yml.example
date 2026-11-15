@@ -1,0 +1,21 @@
+# Copy to ~/.dbt/profiles.yml (or keep here and run with --profiles-dir .)
+c360_attribution:
+  target: dev_duckdb
+  outputs:
+    # Local development / CI: zero-cost, no cloud account needed
+    dev_duckdb:
+      type: duckdb
+      path: ../warehouse.duckdb      # relative to the dbt/ folder (run dbt from inside dbt/)
+      schema: analytics
+      threads: 4
+
+    # Production: Google BigQuery
+    bigquery:
+      type: bigquery
+      method: oauth                # or: service-account + keyfile: /path/key.json
+      project: "{{ env_var('GCP_PROJECT') }}"
+      dataset: analytics           # dbt adds _staging/_intermediate/_marts suffixes
+      location: asia-south1
+      threads: 8
+      job_execution_timeout_seconds: 600
+      priority: interactive

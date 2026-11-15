@@ -1,0 +1,32 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environments & Virtual Envs
+.venv/
+venv/
+env/
+ENV/
+
+# Secrets & Configs
+.env
+*.pem
+*.key
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large raw datasets
+**/data/raw/*.csv
+**/data/processed/*.csv

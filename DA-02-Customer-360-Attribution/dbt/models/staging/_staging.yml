@@ -1,0 +1,51 @@
+version: 2
+models:
+  - name: stg_ga4__events
+    description: GA4 web events, typed and de-duplicated.
+    columns:
+      - name: event_id
+        tests: [unique, not_null]
+      - name: device_id
+        tests: [not_null]
+      - name: event_ts
+        tests: [not_null]
+  - name: stg_segment__tracks
+    description: Segment app events.
+    columns:
+      - name: event_id
+        tests: [unique, not_null]
+      - name: device_id
+        tests: [not_null]
+  - name: stg_segment__identifies
+    columns:
+      - name: identify_id
+        tests: [unique, not_null]
+  - name: stg_crm__contacts
+    description: CRM contacts with normalised emails.
+    columns:
+      - name: contact_id
+        tests: [unique, not_null]
+      - name: email
+        tests: [unique, not_null]
+  - name: stg_crm__orders
+    description: Orders from the CRM (revenue source of truth).
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: contact_id
+        tests:
+          - not_null
+          - relationships: {arguments: {to: ref('stg_crm__contacts'), field: contact_id}}
+      - name: status
+        tests:
+          - accepted_values: {arguments: {values: ['completed', 'refunded']}}
+      - name: net_revenue
+        tests: [not_null]
+  - name: stg_ads__spend
+    columns:
+      - name: spend_id
+        tests: [unique, not_null]
+      - name: channel
+        tests:
+          - not_null
+          - accepted_values: {arguments: {values: ['Paid Search', 'Display', 'Paid Social']}}

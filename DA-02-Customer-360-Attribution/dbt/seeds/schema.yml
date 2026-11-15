@@ -1,0 +1,9 @@
+version: 2
+seeds:
+  - name: channel_mapping
+    description: Maps utm/GA4 source + medium to a marketing channel (the default channel grouping).
+    columns:
+      - name: channel
+        tests: [not_null]
+  - name: ad_platform_channel
+    description: Maps ad-platform campaigns to channels by campaign-name prefix.

@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: dim_customers
+    description: >
+      Customer 360. One row per CRM contact combining profile, devices, web and app behaviour,
+      orders / lifetime value, acquisition channel and RFM segment.
+    columns:
+      - name: customer_key
+        tests: [unique, not_null]
+      - name: email
+        tests: [unique, not_null]
+      - name: lifetime_revenue
+        tests: [not_null]
+      - name: lifecycle_stage
+        tests:
+          - accepted_values: {arguments: {values: ['Customer', 'Prospect', 'Offline lead']}}
+  - name: fct_orders
+    description: Orders with customer sequence and first/last touch channel.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_key
+        tests:
+          - relationships: {arguments: {to: ref('dim_customers'), field: customer_key}}
+  - name: fct_sessions
+    columns:
+      - name: session_id
+        tests: [unique, not_null]
+  - name: fct_attribution
+    description: >
+      Rule-based multi-touch attribution. One row per order x touchpoint with weights and attributed revenue for
+      first touch, last touch, last non-direct, linear, time decay (7-day half-life) and position based (40/20/40).
+    columns:
+      - name: touchpoint_id
+        tests: [unique, not_null]
+  - name: fct_attribution_long
+    description: fct_attribution unpivoted to one row per touchpoint per model.
+    columns:
+      - name: attribution_model
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['first_touch', 'last_touch', 'last_non_direct', 'linear', 'time_decay', 'position_based']
+  - name: fct_conversion_paths
+    description: Customer journeys (converting and not) as channel paths, input to the Markov model.
+    columns:
+      - name: journey_id
+        tests: [unique, not_null]
+  - name: mart_channel_performance
+    description: Month x channel x model. Spend, sessions, attributed conversions and revenue, ROAS, CPA.
+  - name: mart_campaign_roas
+    description: Paid campaign ROAS by attribution model.

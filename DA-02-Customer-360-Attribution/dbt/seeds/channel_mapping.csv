@@ -1,0 +1,15 @@
+source,medium,channel,is_paid
+google,organic,Organic Search,false
+bing,organic,Organic Search,false
+google,cpc,Paid Search,true
+google,display,Display,true
+facebook,paid_social,Paid Social,true
+instagram,paid_social,Paid Social,true
+facebook,social,Organic Social,false
+instagram,social,Organic Social,false
+youtube,social,Organic Social,false
+newsletter,email,Email,false
+partnerblog.com,referral,Referral,false
+dealsite.in,referral,Referral,false
+cashkaro,affiliate,Affiliate,false
+(direct),(none),Direct,false

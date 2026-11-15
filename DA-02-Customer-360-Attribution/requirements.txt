@@ -1,0 +1,13 @@
+# core (local, zero-cost pipeline)
+dbt-core>=1.8
+dbt-duckdb>=1.8
+duckdb>=1.0
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+pytest>=8.0
+# BigQuery target (optional)
+dbt-bigquery>=1.8
+google-cloud-bigquery>=3.20
+db-dtypes>=1.2
+pyarrow>=15

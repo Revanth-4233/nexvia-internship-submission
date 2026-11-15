@@ -1,0 +1,5 @@
+platform,campaign_prefix,channel
+google_ads,gs_,Paid Search
+google_ads,gd_,Display
+meta_ads,fb_,Paid Social
+meta_ads,ig_,Paid Social

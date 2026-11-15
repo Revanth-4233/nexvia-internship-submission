@@ -1,0 +1,35 @@
+version: 2
+models:
+  - name: int_identity_graph
+    description: Device -> user -> CRM contact identity stitching. One row per device.
+    columns:
+      - name: device_id
+        tests: [unique, not_null]
+      - name: customer_key
+        tests: [not_null]
+      - name: contact_id
+        tests:
+          - relationships: {arguments: {to: ref('stg_crm__contacts'), field: contact_id}}
+  - name: int_sessions
+    description: Unified web (GA4) + app (Segment, 30-min sessionized) sessions with channel and customer.
+    columns:
+      - name: session_id
+        tests: [unique, not_null]
+      - name: customer_key
+        tests: [not_null]
+      - name: channel
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Organic Search', 'Paid Search', 'Paid Social', 'Display', 'Email', 'Organic Social',
+                         'Referral', 'Affiliate', 'Direct', 'Other']
+  - name: int_attribution_touchpoints
+    description: Sessions inside the look-back window before each completed order (+ synthetic Direct touch when none).
+    columns:
+      - name: touchpoint_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - not_null
+          - relationships: {arguments: {to: ref('stg_crm__orders'), field: order_id}}
