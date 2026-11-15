@@ -73,8 +73,8 @@ def query_data(sql: str, fallback_csv: str | None = None) -> pd.DataFrame:
 
 # Sidebar Navigation
 with st.sidebar:
-    st.markdown("## 🎯 Customer 360")
-    st.caption("Marketing Attribution & Identity Resolution Platform")
+    st.markdown("## 🎯 Customer 360 & Attribution")
+    st.caption("Developed by: Mukesh Revanth | Nexvia Internship")
     st.markdown("---")
 
     view = st.radio(
@@ -89,11 +89,12 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("### 📊 Infrastructure")
-    st.caption("• **Warehouse:** DuckDB / BigQuery")
-    st.caption("• **Transformations:** dbt Core (Staging, Int, Marts)")
-    st.caption("• **Attribution:** 6 Rule Models + Markov Chain")
-    st.caption("• **Testing:** 77 dbt Tests + 7 Pytests (100% Pass)")
+    st.markdown("### 🛠️ Engineering Highlights")
+    st.caption("• **Identity Resolution:** Deterministic matching linking GA4 cookies & Segment IDs to CRM")
+    st.caption("• **Data Warehouse:** DuckDB (Local) / BigQuery (Prod)")
+    st.caption("• **Transformation:** dbt Core (Staging → Int → Marts)")
+    st.caption("• **Data-Driven Attribution:** First-order Markov chain with exact absorbing matrix algebra")
+    st.caption("• **Quality Gate:** 77 dbt tests + 7 pytest modules (100% pass)")
 
 
 # ==============================================================================

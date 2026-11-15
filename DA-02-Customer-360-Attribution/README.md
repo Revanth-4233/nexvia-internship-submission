@@ -1,13 +1,35 @@
-# Customer 360 & Marketing Attribution Platform
+# Customer 360 & Marketing Attribution Platform (DA-02)
+
+**Author:** Mukesh Revanth ([@Revanth-4233](https://github.com/Revanth-4233))  
+**Organization:** Nexvia Technologies — Data Analytics Internship Capstone  
+**Repository:** [https://github.com/Revanth-4233/nexvia-internship-submission](https://github.com/Revanth-4233/nexvia-internship-submission)
 
 Combines **website (GA4), mobile app (Segment), CRM and ad-platform data** into a single customer view, and shows
 **which marketing channels actually bring revenue** using six rule-based multi-touch attribution models plus a
 data-driven **Markov chain** model.
 
-**Stack:** BigQuery · dbt · Python · Tableau · GA4 · Segment. The whole pipeline also runs locally on DuckDB at
+**Stack:** BigQuery · dbt · Python · Tableau · GA4 · Segment · DuckDB · Streamlit. The whole pipeline also runs locally on DuckDB at
 zero cost, which is also how CI tests it on every push.
 
 ![Revenue credit by channel under each attribution model](docs/model_comparison.png)
+
+---
+
+## Engineering Decisions & Trade-Offs
+
+During development, several architectural trade-offs were made to balance computational efficiency against modeling accuracy:
+
+1. **Why First-Order Markov Chain over Cooperative Game Theory (Shapley Values)?**
+   - Cooperative game theory (Shapley values) requires evaluating marginal contributions across all $2^n$ channel subsets. For 9 omni-channels, this requires computing 512 coalition combinations per customer journey.
+   - In contrast, a first-order absorbing Markov chain represents journeys as state transition probabilities and solves the absorption matrix $B = (I - Q)^{-1} R$ in $O(m^3)$ polynomial time, scaling effortlessly across hundreds of thousands of customer touchpoints.
+
+2. **Deterministic Identity Resolution vs. Probabilistic Graph Matching:**
+   - Instead of fragile third-party cookie matching or fuzzy probabilistic heuristics, we implemented a deterministic identity graph in dbt (`int_identity_graph`).
+   - When a user signs in, places an order, or registers on either web (GA4 `user_pseudo_id`) or mobile (Segment `anonymous_id`), the event records their verified `user_id` or CRM email. We propagate this forward and backward across session windows, bridging the anonymous pre-login journey to their permanent CRM `contact_id`.
+
+3. **Reconciling Marketing Attribution with Finance General Ledger:**
+   - A classic pain point in marketing analytics is that the sum of attributed revenue rarely matches accounting revenue.
+   - In this platform, every completed order is attributed exactly 1.0 total credit across touchpoints in the lookback window. If a customer converts with zero tracked touchpoints, the order is credited to a fallback `Direct` interaction. This is enforced by a custom dbt data test (`assert_attributed_revenue_reconciles`), ensuring finance and growth teams look at the exact same dollar figures.
 
 ---
 

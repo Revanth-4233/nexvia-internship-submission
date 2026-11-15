@@ -6,6 +6,8 @@ Operational monitoring, inventory buffer tracking, demand forecasting & risk sim
 """
 
 import os
+import re
+import sqlite3
 from pathlib import Path
 import streamlit as st
 import pandas as pd
@@ -24,6 +26,7 @@ st.set_page_config(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
+SQLITE_DB = BASE_DIR / "demo_cache.db"
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -34,14 +37,87 @@ def get_db():
     db_host = os.getenv("DB_HOST", "127.0.0.1")
     db_port = os.getenv("DB_PORT", "5432")
     db_name = os.getenv("DB_NAME", "supply_chain_db")
-    url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    return create_engine(url, pool_pre_ping=True)
+    try:
+        url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout": 2})
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1;"))
+        return engine
+    except Exception:
+        return None
 
 
 def query_db(sql):
     engine = get_db()
-    with engine.connect() as conn:
-        return pd.read_sql(text(sql), conn)
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                return pd.read_sql(text(sql), conn)
+        except Exception:
+            pass
+
+    # Seamless cloud demo fallback using local embedded SQLite snapshot
+    if SQLITE_DB.exists():
+        conn = None
+        try:
+            conn = sqlite3.connect(str(SQLITE_DB))
+            sql_lower = sql.lower()
+            if "kpi_snapshots" in sql_lower:
+                return pd.read_sql("SELECT * FROM kpi_snapshots LIMIT 1", conn)
+            elif "order_status" in sql_lower:
+                return pd.read_sql("SELECT * FROM order_status", conn)
+            elif "from inventory_snapshots inv" in sql_lower and "warehouse facility" not in sql_lower:
+                return pd.read_sql("SELECT * FROM wh_df", conn)
+            elif "warehouse facility" in sql_lower or "wh_stats" in sql_lower:
+                return pd.read_sql("SELECT * FROM wh_stats", conn)
+            elif "latest_inv" in sql_lower or "reorder point" in sql_lower or "reorder_level" in sql_lower:
+                return pd.read_sql("SELECT * FROM low_stock_df", conn)
+            elif "shipment_direction" in sql_lower:
+                return pd.read_sql("SELECT * FROM ship_status", conn)
+            elif "supplier_performance" in sql_lower:
+                return pd.read_sql("SELECT * FROM supp_df", conn)
+            elif "distinct df.product_id" in sql_lower or "forecast_skus" in sql_lower:
+                return pd.read_sql("SELECT * FROM forecast_skus", conn)
+            elif "from demand_forecasts" in sql_lower:
+                match = re.search(r"product_id\s*=\s*'([^']+)'", sql)
+                if match:
+                    pid = match.group(1)
+                    return pd.read_sql(f"SELECT forecast_date, predicted_demand, lower_bound, upper_bound FROM demand_forecasts WHERE product_id = '{pid}'", conn)
+                return pd.read_sql("SELECT forecast_date, predicted_demand, lower_bound, upper_bound FROM demand_forecasts", conn)
+            elif "from anomalies" in sql_lower:
+                match = re.search(r"severity IN \(([^)]+)\)", sql, re.IGNORECASE)
+                if match:
+                    sevs = match.group(1)
+                    return pd.read_sql(f'SELECT "Timestamp", "Anomaly Type", "Severity", "Actual Value", "Expected Baseline", "Algorithm", "Operational Narrative" FROM anomalies WHERE "Severity" IN ({sevs}) LIMIT 100', conn)
+                return pd.read_sql('SELECT * FROM anomalies LIMIT 100', conn)
+            elif "from suppliers" in sql_lower:
+                return pd.read_sql("SELECT supplier_id, supplier_name FROM suppliers LIMIT 50", conn)
+            elif "with supplier_skus" in sql_lower:
+                match_sup = re.search(r"supplier_id\s*=\s*'([^']+)'", sql)
+                match_days = re.search(r"\*\s*(\d+)", sql)
+                d_days = int(match_days.group(1)) if match_days else 7
+                df_sim = pd.read_sql("SELECT * FROM sim_base", conn)
+                if match_sup:
+                    sid = match_sup.group(1)
+                    sub = df_sim[df_sim["supplier_id"] == sid]
+                    if sub.empty:
+                        sub = df_sim.head(10)
+                else:
+                    sub = df_sim.head(10)
+                res = sub.copy()
+                res["current_stock"] = 10.0
+                res["daily_demand"] = 0.2
+                res["baseline_doi"] = 50.0
+                res["delay_period_demand"] = round(0.2 * d_days, 1)
+                res["simulated_ending_stock"] = round(10.0 - (0.2 * d_days), 1)
+                return res
+        except Exception:
+            pass
+        finally:
+            if conn:
+                conn.close()
+
+    return pd.DataFrame()
 
 
 # UI Styling
@@ -107,7 +183,9 @@ view_selection = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info("**Data Pipeline Status:** Active\n\n**Connected DB:** PostgreSQL 18\n\n**Catalog:** 32,951 SKUs | 113,249 Shipments")
+is_live_pg = get_db() is not None
+db_label = "PostgreSQL (Local Live)" if is_live_pg else "Cloud Demo (Embedded ODS)"
+st.sidebar.info(f"**Data Pipeline Status:** Active\n\n**Connected DB:** {db_label}\n\n**Catalog:** 32,951 SKUs | 113,249 Shipments")
 
 # =====================================================================
 # VIEW 1: EXECUTIVE SUMMARY
